@@ -19,21 +19,75 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from '@/components/ui/label';
 
-const allUsersData: User[] = [mockUser, mockAdminUser]; // Add more mock users if needed
+const initialUsersData: User[] = [mockUser, mockAdminUser].map(u => ({...u})); // Deep copy for modification
 
 export default function ManageUsersPage() {
+  const [users, setUsers] = useState<User[]>(initialUsersData);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredUsers, setFilteredUsers] = useState<User[]>(allUsersData);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>(users);
+
+  const [isEditRoleDialogOpen, setIsEditRoleDialogOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [selectedRole, setSelectedRole] = useState<User['role']>('user');
 
   useEffect(() => {
     const lowercasedSearchTerm = searchTerm.toLowerCase();
-    const filtered = allUsersData.filter(user =>
+    const filtered = users.filter(user =>
       (user.displayName?.toLowerCase() || '').includes(lowercasedSearchTerm) ||
       user.email.toLowerCase().includes(lowercasedSearchTerm)
     );
     setFilteredUsers(filtered);
-  }, [searchTerm]);
+  }, [searchTerm, users]);
+
+  const handleToggleActive = (userId: string) => {
+    setUsers(prevUsers =>
+      prevUsers.map(user =>
+        user.uid === userId ? { ...user, isActive: !user.isActive } : user
+      )
+    );
+  };
+
+  const handleOpenEditRoleDialog = (userToEdit: User) => {
+    setEditingUser(userToEdit);
+    setSelectedRole(userToEdit.role);
+    setIsEditRoleDialogOpen(true);
+  };
+
+  const handleSaveRole = () => {
+    if (editingUser) {
+      setUsers(prevUsers =>
+        prevUsers.map(user =>
+          user.uid === editingUser.uid ? { ...user, role: selectedRole } : user
+        )
+      );
+      setIsEditRoleDialogOpen(false);
+      setEditingUser(null);
+    }
+  };
+
+  const handleViewDetails = (userToView: User) => {
+    console.log("View user details:", userToView);
+    // Here you would typically open a modal or navigate to a details page
+    alert(`تفاصيل المستخدم:\nالاسم: ${userToView.displayName || userToView.email}\nالدور: ${userToView.role}`);
+  };
 
   return (
     <div className="space-y-6">
@@ -42,8 +96,7 @@ export default function ManageUsersPage() {
           <h1 className="font-headline text-3xl font-semibold">إدارة المستخدمين</h1>
           <p className="text-muted-foreground">عرض، تعديل، أو تعطيل حسابات المستخدمين.</p>
         </div>
-        {/* Add New User button might not be applicable if users register themselves */}
-        {/* <Button asChild> <Link href="/admin/users/new"> <UserPlus className="ml-2 h-5 w-5" /> إضافة مستخدم جديد </Link> </Button> */}
+        {/* "Add New User" button intentionally omitted for now */}
       </div>
 
       <Card>
@@ -96,13 +149,19 @@ export default function ManageUsersPage() {
                     }
                   </TableCell>
                   <TableCell className="text-right space-x-1 rtl:space-x-reverse">
-                    <Button variant="ghost" size="icon" title="عرض التفاصيل">
+                    <Button variant="ghost" size="icon" title="عرض التفاصيل" onClick={() => handleViewDetails(user)}>
                       <Eye className="h-4 w-4" />
                     </Button>
-                     <Button variant="ghost" size="icon" title="تعديل الدور"> {/* Or a dedicated edit page */}
+                     <Button variant="ghost" size="icon" title="تعديل الدور" onClick={() => handleOpenEditRoleDialog(user)}>
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" title={user.isActive ? "تعطيل الحساب" : "تفعيل الحساب"} className={user.isActive ? "text-destructive hover:text-destructive-foreground hover:bg-destructive" : "text-green-600 hover:text-green-50 hover:bg-green-600"}>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      title={user.isActive ? "تعطيل الحساب" : "تفعيل الحساب"} 
+                      className={user.isActive ? "text-destructive hover:text-destructive-foreground hover:bg-destructive" : "text-green-600 hover:text-green-50 hover:bg-green-600"}
+                      onClick={() => handleToggleActive(user.uid)}
+                    >
                       {user.isActive ? <Trash2 className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
                     </Button>
                   </TableCell>
@@ -116,6 +175,41 @@ export default function ManageUsersPage() {
         <p className="text-center text-muted-foreground py-4">
           {searchTerm ? "لم يتم العثور على مستخدمين يطابقون بحثك." : "لا يوجد مستخدمون حالياً."}
         </p>
+      )}
+
+      {editingUser && (
+        <Dialog open={isEditRoleDialogOpen} onOpenChange={setIsEditRoleDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>تعديل دور المستخدم</DialogTitle>
+              <DialogDescription>
+                تغيير دور المستخدم {editingUser.displayName || editingUser.email}.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="role-select" className="text-right">
+                  الدور
+                </Label>
+                <Select value={selectedRole} onValueChange={(value: User['role']) => setSelectedRole(value)}>
+                  <SelectTrigger id="role-select" className="col-span-3">
+                    <SelectValue placeholder="اختر دورًا" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="user">مستخدم</SelectItem>
+                    <SelectItem value="admin">مسؤول</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="outline">إلغاء</Button>
+              </DialogClose>
+              <Button type="button" onClick={handleSaveRole}>حفظ التغييرات</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );
