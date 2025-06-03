@@ -114,7 +114,7 @@ export function SubscriptionPlanForm({ initialData, onSubmitSuccess }: Subscript
                     render={({ field }) => (
                         <FormItem>
                         <FormLabel>العملة</FormLabel>
-                        <FormControl><Input defaultValue="SAR" {...field} /></FormControl> {/* Could be a Select */}
+                        <FormControl><Input {...field} /></FormControl> {/* Removed defaultValue="SAR" */}
                         <FormMessage />
                         </FormItem>
                     )}
