@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, use } from 'react';
 import Image from 'next/image';
 import { getAudiobookById } from '@/lib/mock-data';
 import type { Audiobook as AudiobookType } from '@/types';
@@ -20,9 +20,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-export default function AudioPlayerPage({ params }: { params: { audiobookId: string } }) {
+export default function AudioPlayerPage({ params }: { params: Promise<{ audiobookId: string }> }) {
   const router = useRouter();
-  const audiobook = getAudiobookById(params.audiobookId) as AudiobookType | undefined;
+  const resolvedParams = use(params);
+  const audiobook = getAudiobookById(resolvedParams.audiobookId) as AudiobookType | undefined;
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -66,7 +67,7 @@ export default function AudioPlayerPage({ params }: { params: { audiobookId: str
       const handleLoading = () => setIsLoading(true);
       const handleCanPlay = () => setIsLoading(false);
       const handleProgress = () => { // For buffered progress
-        if (audio.buffered.length > 0) {
+        if (audio.buffered.length > 0 && audio.duration > 0) { // check audio.duration > 0
           setBuffered((audio.buffered.end(audio.buffered.length - 1) / audio.duration) * 100);
         }
       };
@@ -284,3 +285,4 @@ export default function AudioPlayerPage({ params }: { params: { audiobookId: str
     </div>
   );
 }
+
