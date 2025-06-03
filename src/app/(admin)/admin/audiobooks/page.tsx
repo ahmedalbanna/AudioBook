@@ -1,4 +1,7 @@
 
+"use client";
+
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { mockAudiobooks, getCategoryById } from '@/lib/mock-data';
@@ -24,7 +27,18 @@ const audiobooksData: Audiobook[] = mockAudiobooks.map(ab => ({
 }));
 
 export default function ManageAudiobooksPage() {
-  // Add search/filter state if needed
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredAudiobooks, setFilteredAudiobooks] = useState<Audiobook[]>(audiobooksData);
+
+  useEffect(() => {
+    const lowercasedSearchTerm = searchTerm.toLowerCase();
+    const filtered = audiobooksData.filter(audiobook =>
+      audiobook.title.toLowerCase().includes(lowercasedSearchTerm) ||
+      audiobook.author.toLowerCase().includes(lowercasedSearchTerm)
+    );
+    setFilteredAudiobooks(filtered);
+  }, [searchTerm]);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -45,7 +59,12 @@ export default function ManageAudiobooksPage() {
           <CardDescription>
             <div className="flex items-center gap-2 mt-2">
               <Search className="h-4 w-4 text-muted-foreground" />
-              <Input placeholder="ابحث عن كتاب..." className="max-w-sm" />
+              <Input 
+                placeholder="ابحث عن كتاب بالعنوان أو المؤلف..." 
+                className="max-w-sm"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
           </CardDescription>
         </CardHeader>
@@ -63,7 +82,7 @@ export default function ManageAudiobooksPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {audiobooksData.map((audiobook) => {
+              {filteredAudiobooks.map((audiobook) => {
                 const category = getCategoryById(audiobook.categoryRef);
                 return (
                   <TableRow key={audiobook.audiobookId}>
@@ -101,8 +120,10 @@ export default function ManageAudiobooksPage() {
           </Table>
         </CardContent>
       </Card>
-      {audiobooksData.length === 0 && (
-        <p className="text-center text-muted-foreground py-4">لا توجد كتب صوتية حالياً.</p>
+      {filteredAudiobooks.length === 0 && (
+        <p className="text-center text-muted-foreground py-4">
+          {searchTerm ? "لم يتم العثور على كتب تطابق بحثك." : "لا توجد كتب صوتية حالياً."}
+        </p>
       )}
     </div>
   );
