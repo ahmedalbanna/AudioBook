@@ -1,12 +1,14 @@
 
 "use client";
 
+import { use } from 'react'; // Added use
 import { AudiobookForm } from "@/components/admin/audiobook-form";
 import { getAudiobookById } from "@/lib/mock-data";
 import { notFound } from 'next/navigation';
 
-export default function EditAudiobookPage({ params }: { params: { audiobookId: string } }) {
-  const audiobook = getAudiobookById(params.audiobookId);
+export default function EditAudiobookPage({ params }: { params: Promise<{ audiobookId: string }> }) { // Updated params type
+  const resolvedParams = use(params); // Unwrap params
+  const audiobook = getAudiobookById(resolvedParams.audiobookId); // Use resolvedParams
 
   if (!audiobook) {
     notFound();
