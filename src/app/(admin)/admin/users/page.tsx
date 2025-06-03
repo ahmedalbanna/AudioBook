@@ -1,11 +1,14 @@
 
+"use client";
+
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { mockUser, mockAdminUser } from '@/lib/mock-data'; // Example users
+import { mockUser, mockAdminUser } from '@/lib/mock-data';
 import type { User } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
-import { Edit, Trash2, Search, Eye, UserPlus, CheckCircle, XCircle } from "lucide-react";
+import { Edit, Trash2, Search, Eye, CheckCircle, XCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -17,9 +20,21 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
-const usersData: User[] = [mockUser, mockAdminUser]; // Add more mock users if needed
+const allUsersData: User[] = [mockUser, mockAdminUser]; // Add more mock users if needed
 
 export default function ManageUsersPage() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredUsers, setFilteredUsers] = useState<User[]>(allUsersData);
+
+  useEffect(() => {
+    const lowercasedSearchTerm = searchTerm.toLowerCase();
+    const filtered = allUsersData.filter(user =>
+      (user.displayName?.toLowerCase() || '').includes(lowercasedSearchTerm) ||
+      user.email.toLowerCase().includes(lowercasedSearchTerm)
+    );
+    setFilteredUsers(filtered);
+  }, [searchTerm]);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -37,7 +52,12 @@ export default function ManageUsersPage() {
            <CardDescription>
             <div className="flex items-center gap-2 mt-2">
               <Search className="h-4 w-4 text-muted-foreground" />
-              <Input placeholder="ابحث عن مستخدم بالاسم أو البريد..." className="max-w-sm" />
+              <Input 
+                placeholder="ابحث عن مستخدم بالاسم أو البريد..." 
+                className="max-w-sm"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
           </CardDescription>
         </CardHeader>
@@ -54,11 +74,11 @@ export default function ManageUsersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {usersData.map((user) => (
+              {filteredUsers.map((user) => (
                 <TableRow key={user.uid}>
                   <TableCell>
                     <Avatar className="h-9 w-9">
-                      <AvatarImage src={user.photoUrl || `https://placehold.co/40x40.png?text=${user.displayName?.[0] || user.email[0]}`} alt={user.displayName} data-ai-hint="profile picture" />
+                      <AvatarImage src={user.photoUrl || `https://placehold.co/40x40.png?text=${user.displayName?.[0] || user.email[0]}`} alt={user.displayName || user.email} data-ai-hint="profile picture" />
                       <AvatarFallback>{user.displayName ? user.displayName.charAt(0).toUpperCase() : user.email.charAt(0).toUpperCase()}</AvatarFallback>
                     </Avatar>
                   </TableCell>
@@ -92,8 +112,10 @@ export default function ManageUsersPage() {
           </Table>
         </CardContent>
       </Card>
-       {usersData.length === 0 && (
-        <p className="text-center text-muted-foreground py-4">لا يوجد مستخدمون حالياً.</p>
+       {filteredUsers.length === 0 && (
+        <p className="text-center text-muted-foreground py-4">
+          {searchTerm ? "لم يتم العثور على مستخدمين يطابقون بحثك." : "لا يوجد مستخدمون حالياً."}
+        </p>
       )}
     </div>
   );
