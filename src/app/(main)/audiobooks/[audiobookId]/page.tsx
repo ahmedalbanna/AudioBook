@@ -1,7 +1,7 @@
 
 "use client"; // For client-side interactions like audio player
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, use } from 'react'; // Import use
 import Image from 'next/image';
 import { getAudiobookById, mockUser } from '@/lib/mock-data'; // Assuming mockUser for auth state
 import type { Audiobook as AudiobookType, User } from '@/types';
@@ -15,8 +15,9 @@ import { Slider } from '@/components/ui/slider'; // For volume control
 // This would typically come from an AuthContext or similar
 const currentUser: User | null = mockUser; // Mock: user is logged in and owns/subscribed to some books.
 
-export default function AudiobookDetailsPage({ params }: { params: { audiobookId: string } }) {
-  const audiobook = getAudiobookById(params.audiobookId) as AudiobookType | undefined; // Cast for full type
+export default function AudiobookDetailsPage({ params }: { params: Promise<{ audiobookId: string }> }) {
+  const resolvedParams = use(params); // Unwrap the params promise
+  const audiobook = getAudiobookById(resolvedParams.audiobookId) as AudiobookType | undefined; // Use resolvedParams
   
   const [isPlayingPreview, setIsPlayingPreview] = useState(false);
   const [previewProgress, setPreviewProgress] = useState(0);
